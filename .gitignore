@@ -2,3 +2,6 @@ news/
 venv/
 __pycache__/
 .env
+tts-models
+news.log
+audio/

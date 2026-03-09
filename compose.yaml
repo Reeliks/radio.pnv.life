@@ -1,0 +1,46 @@
+x-common-config: &common
+  restart: always
+  networks:
+    - federal-network
+
+services:
+  icecast:
+    image: moul/icecast
+    container_name: icecast
+    environment:
+      - ICECAST_SOURCE_PASSWORD=${ICECAST_SOURCE_PASSWORD}
+      - ICECAST_ADMIN_PASSWORD=${ICECAST_ADMIN_PASSWORD}
+      - ICECAST_HOSTNAME=localhost
+    ports:
+      - "2238:8000"
+    <<: *common
+
+  liquidsoap:
+    image: savonet/liquidsoap:v2.4.x-latest
+    container_name: liquidsoap
+    depends_on: 
+      - icecast
+    volumes:
+      - ./liquidsoap.liq:/liquidsoap.liq
+      - ./audio:/audio
+      - ./news:/news
+    environment:
+      - PASSWORD=${ICECAST_SOURCE_PASSWORD}
+    command: /liquidsoap.liq
+    <<: *common
+
+  news-scraper:
+    build: .
+    container_name: news-scraper
+    volumes:
+      - ./news:/news
+      - ./news.log:/var/log/news.log
+      - ./tts-models:/root/.local/share/tts
+      - ./speaker.wav:/app/speaker.wav
+    environment:
+      - PASSWORD=${ICECAST_SOURCE_PASSWORD}
+    <<: *common
+
+networks:
+  federal-network:
+    driver: bridge
